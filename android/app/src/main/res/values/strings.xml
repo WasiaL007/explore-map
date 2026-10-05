@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Hello World</string>
+    <string name="title_activity_main">Hello World</string>
+    <string name="package_name">com.wasi.exploremap</string>
+    <string name="custom_url_scheme">com.wasi.exploremap</string>
+</resources>

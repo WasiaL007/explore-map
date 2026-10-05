@@ -3,12 +3,7 @@ type Flag = { fx: number; fy: number; fw: number; fh: number }
 
 export type Fmt = 'png' | 'jpg' | 'pdf'
 
-const TOP = 80
-const BAR = 90
-const PAD = 24
-const BASE = '#e4dfd2'
-const GREEN = '#00805a'
-const TRACK = '#e5e7eb'
+const TOP = 112
 
 export function exportMap(o: {
   format: Fmt
@@ -20,42 +15,30 @@ export function exportMap(o: {
 }) {
   const { paths, flag, visited, size, total, format } = o
   const { w, h } = size
-  const H = h + TOP + BAR
+  const H = h + TOP
   const S = 3
-  const y0 = TOP + h
-  const bw = w - PAD * 2
-
-  const pct = total ? Math.round((visited.size / total) * 100) : 0
-  const pctText = pct.toLocaleString('bn-BD') + '%'
   const count = visited.size.toLocaleString('bn-BD')
-
-  const vis = paths.filter((p) => visited.has(p.name))
-  const clip = vis.map((p) => `<path d="${p.d}"/>`).join('')
-  const base = paths
-    .map((p) => `<path d="${p.d}" fill="${BASE}" stroke="white" stroke-opacity="0.8" stroke-width="0.5"/>`)
+  const tot = total.toLocaleString('bn-BD')
+  const clip = paths.map((p) => `<path d="${p.d}"/>`).join('')
+  const lines = paths
+    .map((p) => {
+      const v = visited.has(p.name)
+      return `<path d="${p.d}" fill="${v ? 'rgba(250,204,21,0.8)' : 'none'}" stroke="white" stroke-opacity="0.5" stroke-width="0.5"/>`
+    })
     .join('')
-  const outline = vis
-    .map((p) => `<path d="${p.d}" fill="none" stroke="white" stroke-opacity="0.5" stroke-width="0.5"/>`)
-    .join('')
-
-  const fillW = pct > 0 ? Math.max((bw * pct) / 100, 10) : 0
-
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * S}" height="${H * S}" viewBox="0 0 ${w} ${H}">
 <rect width="${w}" height="${H}" fill="#ffffff"/>
 <g transform="translate(0 ${TOP})">
 <defs><clipPath id="bd">${clip}</clipPath></defs>
-${base}
 <g clip-path="url(#bd)">
 <rect x="${flag.fx}" y="${flag.fy}" width="${flag.fw}" height="${flag.fh}" fill="#006a4e"/>
 <circle cx="${flag.fx + flag.fw / 2}" cy="${flag.fy + flag.fh / 2}" r="${flag.fh * 0.15}" fill="#f42a41"/>
 </g>
-${outline}
+${lines}
 </g>
 <text x="${w / 2}" y="46" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="800"><tspan fill="#f42a41">Explore</tspan><tspan fill="#006a4e"> Bangladesh</tspan></text>
-<rect x="${PAD}" y="${y0 + 14}" width="${bw}" height="10" rx="5" fill="${TRACK}"/>
-<rect x="${PAD}" y="${y0 + 14}" width="${fillW}" height="10" rx="5" fill="${GREEN}"/>
-<text x="${PAD}" y="${y0 + 46}" font-family="sans-serif" font-size="15" font-weight="600" fill="#1f2937">${pctText} বাংলাদেশ ঘোরা হয়েছে</text>
-<text x="${w - PAD}" y="${y0 + 46}" text-anchor="end" font-family="sans-serif" font-size="15" font-weight="600" fill="#1f2937">${count}টি জেলা</text>
+<rect x="${w / 2 - 125}" y="62" width="250" height="32" rx="16" fill="black" fill-opacity="0.6"/>
+<text x="${w / 2}" y="84" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#fcd34d">${count} / ${tot} জেলা ঘোরা হয়েছে</text>
 </svg>`
 
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))
