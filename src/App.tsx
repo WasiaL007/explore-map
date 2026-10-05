@@ -1,3 +1,4 @@
+import bnNames from './bnNames.json'
 import { useEffect, useMemo, useState } from 'react'
 import { geoMercator, geoPath } from 'd3-geo'
 import type { FeatureCollection, Geometry } from 'geojson'
@@ -128,8 +129,8 @@ export default function App() {
         ) : sel ? (
           <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-neutral-900/95 p-4 text-white shadow-2xl">
             <div>
-              <div className="text-lg font-bold">{sel.name}</div>
-              <div className="text-sm text-neutral-400">{sel.division} বিভাগ</div>
+              <div className="text-lg font-bold">{(bnNames.districts as Record<string, string>)[sel.name] ?? sel.name} <span className="text-sm font-normal text-neutral-400">{sel.name}</span></div>
+              <div className="text-sm text-neutral-400">{(bnNames.divisions as Record<string, string>)[sel.division] ?? sel.division} বিভাগ</div>
             </div>
             <button
               onClick={() => toggleVisited(sel.name)}
