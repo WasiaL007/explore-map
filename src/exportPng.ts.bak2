@@ -1,4 +1,3 @@
-import { saveBlob } from './saveFile'
 type P = { name: string; d: string }
 type Flag = { fx: number; fy: number; fw: number; fh: number }
 
@@ -71,14 +70,17 @@ ${outline}
       import('jspdf').then(({ jsPDF }) => {
         const pdf = new jsPDF({ orientation: w > H ? 'landscape' : 'portrait', unit: 'px', format: [w, H] })
         pdf.addImage(c.toDataURL('image/jpeg', 0.95), 'JPEG', 0, 0, w, H)
-        void saveBlob(pdf.output('blob'), 'explore-bangladesh.pdf')
+        pdf.save('explore-bangladesh.pdf')
       })
       return
     }
     const mime = format === 'jpg' ? 'image/jpeg' : 'image/png'
     c.toBlob((b) => {
       if (!b) return
-      void saveBlob(b, 'explore-bangladesh.' + format)
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(b)
+      a.download = 'explore-bangladesh.' + format
+      a.click()
     }, mime, 0.95)
   }
   img.src = url
