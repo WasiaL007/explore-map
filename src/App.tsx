@@ -5,9 +5,22 @@ import type { FeatureCollection, Geometry } from 'geojson'
 type Props = { ADM2_EN: string; ADM1_EN: string }
 type FC = FeatureCollection<Geometry, Props>
 
+const STORAGE_KEY = 'explore-bd-visited'
+const bn = (n: number) => n.toLocaleString('bn-BD')
+
+function loadVisited(): Set<string> {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return new Set(raw ? (JSON.parse(raw) as string[]) : [])
+  } catch {
+    return new Set()
+  }
+}
+
 export default function App() {
   const [data, setData] = useState<FC | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  const [visited, setVisited] = useState<Set<string>>(loadVisited)
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
 
   useEffect(() => {
@@ -16,6 +29,22 @@ export default function App() {
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify([...visited]))
+    } catch {
+      /* ignore */
+    }
+  }, [visited])
+
+  const toggleVisited = (name: string) =>
+    setVisited((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
 
   const map = useMemo(() => {
     if (!data) return null
@@ -33,10 +62,17 @@ export default function App() {
     const fx = x0 + bw / 2 - fw / 2
     const fy = y0 + bh / 2 - fh / 2
     return {
-      paths: data.features.map((f) => ({ name: f.properties.ADM2_EN, d: path(f) ?? '' })),
+      paths: data.features.map((f) => ({
+        name: f.properties.ADM2_EN,
+        division: f.properties.ADM1_EN,
+        d: path(f) ?? '',
+      })),
       flag: { fx, fy, fw, fh },
     }
   }, [data, size])
+
+  const sel = map?.paths.find((p) => p.name === selected) ?? null
+  const total = data?.features.length ?? 64
 
   return (
     <div className="fixed inset-0 bg-neutral-950">
@@ -59,26 +95,55 @@ export default function App() {
                 fill="#f42a41"
               />
             </g>
-            {map.paths.map((p) => (
-              <path
-                key={p.name}
-                d={p.d}
-                fill={selected === p.name ? 'rgba(255,255,255,0.45)' : 'transparent'}
-                stroke="white"
-                strokeOpacity={selected === p.name ? 1 : 0.35}
-                strokeWidth={selected === p.name ? 1.5 : 0.5}
-                onClick={() => setSelected(p.name)}
-                className="cursor-pointer"
-              />
-            ))}
+            {map.paths.map((p) => {
+              const isVisited = visited.has(p.name)
+              const isSel = selected === p.name
+              return (
+                <path
+                  key={p.name}
+                  d={p.d}
+                  fill={isVisited ? 'rgba(250,204,21,0.65)' : isSel ? 'rgba(255,255,255,0.35)' : 'transparent'}
+                  stroke={isSel ? '#fff' : 'white'}
+                  strokeOpacity={isSel ? 1 : 0.35}
+                  strokeWidth={isSel ? 2 : 0.5}
+                  onClick={() => setSelected(p.name)}
+                  className="cursor-pointer"
+                />
+              )
+            })}
           </>
         )}
       </svg>
-      <h1 className="pointer-events-none absolute top-3 left-0 right-0 text-center text-xl font-bold text-white drop-shadow">
-        Explore Bangladesh
-      </h1>
-      <div className="pointer-events-none absolute bottom-4 left-0 right-0 text-center text-lg font-semibold text-white drop-shadow">
-        {data ? selected ?? 'একটা জেলায় ট্যাপ করো' : 'লোড হচ্ছে...'}
+
+      <div className="pointer-events-none absolute top-3 left-0 right-0 flex flex-col items-center gap-1">
+        <h1 className="rounded-full bg-white px-5 py-1 text-2xl font-extrabold shadow-lg"><span className="text-[#f42a41]">Explore</span> <span className="text-[#006a4e]">Bangladesh</span></h1>
+        <div className="rounded-full bg-black/60 px-4 py-1 text-sm font-semibold text-amber-300">
+          {bn(visited.size)} / {bn(total)} জেলা ঘোরা হয়েছে
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        {!data ? (
+          <div className="text-center text-white">লোড হচ্ছে...</div>
+        ) : sel ? (
+          <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-2xl bg-neutral-900/95 p-4 text-white shadow-2xl">
+            <div>
+              <div className="text-lg font-bold">{sel.name}</div>
+              <div className="text-sm text-neutral-400">{sel.division} বিভাগ</div>
+            </div>
+            <button
+              onClick={() => toggleVisited(sel.name)}
+              className={
+                'rounded-xl px-4 py-2 font-semibold ' +
+                (visited.has(sel.name) ? 'bg-amber-400 text-black' : 'bg-emerald-600 text-white')
+              }
+            >
+              {visited.has(sel.name) ? '✓ ঘুরেছি' : 'ঘুরেছি?'}
+            </button>
+          </div>
+        ) : (
+          <div className="text-center text-lg font-semibold text-white drop-shadow">একটা জেলায় ট্যাপ করো</div>
+        )}
       </div>
     </div>
   )
