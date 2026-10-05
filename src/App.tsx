@@ -1,3 +1,4 @@
+import { exportMap, type Fmt } from './exportPng'
 import bnNames from './bnNames.json'
 import { useEffect, useMemo, useState } from 'react'
 import { geoMercator, geoPath } from 'd3-geo'
@@ -21,6 +22,7 @@ function loadVisited(): Set<string> {
 export default function App() {
   const [data, setData] = useState<FC | null>(null)
   const [selected, setSelected] = useState<string | null>(null)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [visited, setVisited] = useState<Set<string>>(loadVisited)
   const [size, setSize] = useState({ w: window.innerWidth, h: window.innerHeight })
 
@@ -121,6 +123,32 @@ export default function App() {
         <div className="rounded-full bg-black/60 px-4 py-1 text-sm font-semibold text-amber-300">
           {bn(visited.size)} / {bn(total)} জেলা ঘোরা হয়েছে
         </div>
+      </div>
+
+      {menuOpen && <div className="absolute inset-0" onClick={() => setMenuOpen(false)} />}
+      <div className="absolute bottom-28 left-0 right-0 flex flex-col items-center gap-2">
+        {menuOpen && (
+          <div className="flex overflow-hidden rounded-full bg-white text-black shadow-xl">
+            {(['png', 'jpg', 'pdf'] as Fmt[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => {
+                  setMenuOpen(false)
+                  if (map) exportMap({ format: f, paths: map.paths, flag: map.flag, visited, size, total })
+                }}
+                className="px-5 py-3 text-center text-sm font-semibold active:bg-neutral-200"
+              >
+                {f.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
+        <button
+          onClick={() => setMenuOpen((o) => !o)}
+          className="rounded-full bg-white px-4 py-3 text-sm font-semibold text-black shadow-lg"
+        >
+          📷 ছবি
+        </button>
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 p-4">
