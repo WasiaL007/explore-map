@@ -1,5 +1,3 @@
-window.addEventListener('error', (e) => alert('Error: ' + e.message))
-window.addEventListener('unhandledrejection', (e) => alert('Error: ' + String((e.reason && e.reason.message) || e.reason)))
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

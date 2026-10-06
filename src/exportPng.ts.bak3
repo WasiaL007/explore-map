@@ -1,18 +1,15 @@
 import { saveBlob } from './saveFile'
-
 type P = { name: string; d: string }
 type Flag = { fx: number; fy: number; fw: number; fh: number }
-type Label = { x: number; y: number; t: string }
 
 export type Fmt = 'png' | 'jpg' | 'pdf'
 
 const TOP = 80
+const BAR = 90
 const PAD = 24
-const BASE = '#e7e1d3'
-const GREEN = '#047857'
-const TRACK = '#e5e5e5'
-
-const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const BASE = '#e4dfd2'
+const GREEN = '#00805a'
+const TRACK = '#e5e7eb'
 
 export function exportMap(o: {
   format: Fmt
@@ -21,20 +18,13 @@ export function exportMap(o: {
   visited: Set<string>
   size: { w: number; h: number }
   total: number
-  labels?: Label[]
-  avatar?: string | null
 }) {
-  const { paths, flag, visited, size, total, format, labels, avatar } = o
+  const { paths, flag, visited, size, total, format } = o
   const { w, h } = size
-  const hasAv = !!avatar
-  const BAR = hasAv ? 104 : 90
   const H = h + TOP + BAR
   const S = 3
   const y0 = TOP + h
-  const bx = hasAv ? PAD + 76 : PAD
-  const bw = w - PAD - bx
-  const by = y0 + (hasAv ? 34 : 14)
-  const fs = hasAv ? 13 : 15
+  const bw = w - PAD * 2
 
   const pct = total ? Math.round((visited.size / total) * 100) : 0
   const pctText = pct.toLocaleString('bn-BD') + '%'
@@ -43,25 +33,13 @@ export function exportMap(o: {
   const vis = paths.filter((p) => visited.has(p.name))
   const clip = vis.map((p) => `<path d="${p.d}"/>`).join('')
   const base = paths
-    .map((p) => `<path d="${p.d}" fill="${BASE}" stroke="white" stroke-opacity="0.9" stroke-width="0.5"/>`)
+    .map((p) => `<path d="${p.d}" fill="${BASE}" stroke="white" stroke-opacity="0.8" stroke-width="0.5"/>`)
     .join('')
-  const lab = (labels ?? [])
-    .map(
-      (l) =>
-        `<g><circle cx="${l.x}" cy="${l.y}" r="1.8" fill="#f42a41" stroke="white" stroke-width="0.6"/>` +
-        (l.t
-          ? `<text x="${l.x}" y="${l.y - 4}" text-anchor="middle" font-family="sans-serif" font-size="8" font-weight="700" fill="#111" stroke="white" stroke-width="2.4" paint-order="stroke" stroke-linejoin="round">${esc(l.t)}</text>`
-          : '') +
-        '</g>',
-    )
+  const outline = vis
+    .map((p) => `<path d="${p.d}" fill="none" stroke="white" stroke-opacity="0.5" stroke-width="0.5"/>`)
     .join('')
-  const fillW = pct > 0 ? Math.max((bw * pct) / 100, 10) : 0
 
-  const avSvg = hasAv
-    ? `<defs><clipPath id="av"><circle cx="${PAD + 32}" cy="${y0 + 48}" r="32"/></clipPath></defs>
-<circle cx="${PAD + 32}" cy="${y0 + 48}" r="35" fill="#047857"/>
-<image href="${avatar}" x="${PAD}" y="${y0 + 16}" width="64" height="64" preserveAspectRatio="xMidYMid slice" clip-path="url(#av)"/>`
-    : ''
+  const fillW = pct > 0 ? Math.max((bw * pct) / 100, 10) : 0
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w * S}" height="${H * S}" viewBox="0 0 ${w} ${H}">
 <rect width="${w}" height="${H}" fill="#ffffff"/>
@@ -72,14 +50,13 @@ ${base}
 <rect x="${flag.fx}" y="${flag.fy}" width="${flag.fw}" height="${flag.fh}" fill="#006a4e"/>
 <circle cx="${flag.fx + flag.fw / 2}" cy="${flag.fy + flag.fh / 2}" r="${flag.fh * 0.15}" fill="#f42a41"/>
 </g>
-${lab}
+${outline}
 </g>
 <text x="${w / 2}" y="46" text-anchor="middle" font-family="sans-serif" font-size="26" font-weight="800"><tspan fill="#f42a41">Explore</tspan><tspan fill="#006a4e"> Bangladesh</tspan></text>
-${avSvg}
-<rect x="${bx}" y="${by}" width="${bw}" height="10" rx="5" fill="${TRACK}"/>
-<rect x="${bx}" y="${by}" width="${fillW}" height="10" rx="5" fill="${GREEN}"/>
-<text x="${bx}" y="${by + 32}" font-family="sans-serif" font-size="${fs}" font-weight="600" fill="#525252">${pctText} বাংলাদেশ ঘোরা হয়েছে</text>
-<text x="${w - PAD}" y="${by + 32}" text-anchor="end" font-family="sans-serif" font-size="${fs}" font-weight="600" fill="#525252">${count}টি জেলা</text>
+<rect x="${PAD}" y="${y0 + 14}" width="${bw}" height="10" rx="5" fill="${TRACK}"/>
+<rect x="${PAD}" y="${y0 + 14}" width="${fillW}" height="10" rx="5" fill="${GREEN}"/>
+<text x="${PAD}" y="${y0 + 46}" font-family="sans-serif" font-size="15" font-weight="600" fill="#1f2937">${pctText} বাংলাদেশ ঘোরা হয়েছে</text>
+<text x="${w - PAD}" y="${y0 + 46}" text-anchor="end" font-family="sans-serif" font-size="15" font-weight="600" fill="#1f2937">${count}টি জেলা</text>
 </svg>`
 
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }))

@@ -3,7 +3,6 @@ import { geoMercator, geoPath } from 'd3-geo'
 import type { FeatureCollection, Geometry } from 'geojson'
 import bnNames from './bnNames.json'
 import { exportMap, type Fmt } from './exportPng'
-import { loadAvatar, saveAvatar, fileToAvatar } from './avatar'
 import WorldMap from './WorldMap'
 
 type Props = { ADM2_EN: string; ADM1_EN: string }
@@ -68,7 +67,6 @@ export default function App() {
   const [query, setQuery] = useState('')
   const [showNames, setShowNames] = useState(true)
   const [showAbout, setShowAbout] = useState(false)
-  const [avatar, setAvatar] = useState<string | null>(loadAvatar)
   const [tab, setTab] = useState<'bd' | 'world'>('bd')
   const [vw, setVw] = useState(window.innerWidth)
   const [slides, setSlides] = useState<{ name: string; src: string }[]>([])
@@ -446,48 +444,12 @@ export default function App() {
             <button
               key={f}
               disabled={!map}
-              onClick={() => map && exportMap({ format: f, paths: map.paths, flag: map.flag, visited, size: { w: mapW, h: mapH }, total, avatar, labels: map.paths.filter((p) => visited.has(p.name) && Number.isFinite(p.c[0])).map((p) => ({ x: p.c[0], y: p.c[1], t: showNames ? (bnD[p.name] ?? p.name) : '' })) })}
+              onClick={() => map && exportMap({ format: f, paths: map.paths, flag: map.flag, visited, size: { w: mapW, h: mapH }, total })}
               className="rounded-full bg-neutral-900 px-4 py-2 text-sm font-bold text-white disabled:opacity-40"
             >
               {f.toUpperCase()}
             </button>
           ))}
-        </div>
-
-        <div className="mt-2 flex items-center justify-center gap-3 text-sm">
-          {avatar && <img src={avatar} alt="me" className="h-9 w-9 rounded-full object-cover" />}
-          <label className="cursor-pointer rounded-full bg-emerald-100 px-3 py-1.5 font-semibold text-emerald-800">
-            {avatar ? 'ছবি বদলান' : '🙂 নিজের ছবি যোগ করুন'}
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={async (e) => {
-                const f = e.target.files?.[0]
-                if (f) {
-                  try {
-                    const a = await fileToAvatar(f)
-                    setAvatar(a)
-                    saveAvatar(a)
-                  } catch {
-                    /* ignore */
-                  }
-                }
-                e.target.value = ''
-              }}
-            />
-          </label>
-          {avatar && (
-            <button
-              onClick={() => {
-                setAvatar(null)
-                saveAvatar(null)
-              }}
-              className="text-neutral-500 underline"
-            >
-              সরান
-            </button>
-          )}
         </div>
 
         <input
